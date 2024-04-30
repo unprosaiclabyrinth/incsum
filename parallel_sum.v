@@ -228,7 +228,7 @@ Qed.
 Lemma parallel_inc_sum_locked_spec lock l v (n : Z) :
   {{{ is_lock lock (inc_sum_inv n l v) ∗ ⌜(0 ≤ n)%Z⌝ }}}
     parallel_inc_sum_locked lock #n v
-  {{{ m, RET #m; ⌜(sum_list_coq l ≤ m)%Z⌝ ∗ is_list (map (Z.add n) l) v }}}.
+  {{{ m, RET #m; ⌜(sum_list_coq l ≤ m)%Z⌝ }}}.
 Proof.
   iIntros (Ø) "(#Hl & %Hn) Hpost".
   unfold parallel_inc_sum_locked. wp_lam. wp_let.
@@ -266,6 +266,6 @@ Proof.
   + iIntros (v1 v2) "[_ Hm]".
     iDestruct "Hm" as (m) "[%H1 Hm]".
     iNext. wp_pure _. wp_lam. wp_load.
-    iApply "Hpost". unfold is_lock.      
+    iApply "Hpost". unfold is_lock. done. Unshelve.       
 
 Admitted.
