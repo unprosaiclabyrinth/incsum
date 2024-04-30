@@ -7,7 +7,7 @@ From iris.base_logic.lib Require Import invariants.
 From iris.heap_lang Require Import proofmode notation.
 From iris.heap_lang.lib Require Import par.
 Section proof.
-Context `{!heapGS Σ}.
+Context `{!heapGS Σ, !spawnG Σ}.
 
 (**
   is_list
@@ -230,42 +230,41 @@ Lemma parallel_inc_sum_locked_spec lock l v (n : Z) :
     parallel_inc_sum_locked lock #n v
   {{{ m, RET #m; ⌜(sum_list_coq l ≤ m)%Z⌝ }}}.
 Proof.
-  iIntros (Ø) "(#Hl & %Hn) Hpost".
+  iIntros (Ø) "(#Hlock & %Hn) Hpost".
   unfold parallel_inc_sum_locked. wp_lam. wp_let.
   wp_alloc sum as "Hsum". wp_let.
   wp_bind ((acquire lock;; inc_list #n v;; release lock) ||| (acquire lock;; #sum <- sum_list v;; release lock))%E.
   wp_smart_apply ((wp_par (fun _ => True)%I (fun _ => (∃ (m : Z), ⌜(sum_list_coq l ≤ m)%Z⌝ ∗ sum ↦ #m))%I) with "[] [Hsum]").
-  + wp_apply (acquire_spec with "[Hl]").
-    - unfold is_lock. iDestruct "Hl" as (l0) "[%Hl0 Hinv]".
+  + wp_apply (acquire_spec with "[Hlock]").
+    - unfold is_lock. iDestruct "Hlock" as (l0) "[%Hl0 Hinv]".
       iExists l0. iSplit.
       { iPureIntro. done. }
       { done. }
     - iIntros "HR". wp_seq.
       unfold inc_sum_inv. 
-      iDestruct "HR" as (l') "(%H1 & Hl')".
-      wp_apply (inc_list_spec with "Hl'").
-      iIntros "H". wp_seq.
-      wp_apply (release_spec with "[$Hl H]").
+      iDestruct "HR" as (l') "(%Hl & Hv)".
+      wp_apply (inc_list_spec with "Hv").
+      iIntros "Hv". wp_seq.
+      wp_apply (release_spec with "[$Hlock Hv]").
       { iExists (map (Z.add n) l'). iSplit.
         { iPureIntro.
           rewrite sum_inc_eq_n_len.
           lia. }
         { done. }}
       { done. }
-  + wp_apply (acquire_spec with "[Hl]"). done.
-    iIntros "H". wp_seq.
-    unfold is_lock. iDestruct "Hl" as (l0) "(%Hlock & Hinv)". subst.
-    unfold inc_sum_inv. iDestruct "H" as (l') "(%H1 & Hl')".
-    wp_apply (sum_list_spec with "[Hl']"). done.
-    iIntros "Hl'". wp_store.
-    wp_apply (release_spec with "[Hl']").
+  + wp_apply (acquire_spec with "[Hlock]"). done.
+    iIntros "Hv". wp_seq.
+    unfold is_lock. iDestruct "Hlock" as (l0) "(%Hl0 & Hinv)". subst.
+    unfold inc_sum_inv. iDestruct "Hv" as (l') "(%Hl & Hv)".
+    wp_apply (sum_list_spec with "[Hv]"). done.
+    iIntros "Hv". wp_store.
+    wp_apply (release_spec with "[Hv]").
     - iSplitR.
       { unfold is_lock. iExists l0. iSplit; done. }
       { iExists l'. iFrame. done. }
     - iIntros "_". iExists (sum_list_coq l'). iFrame. done.
   + iIntros (v1 v2) "[_ Hm]".
-    iDestruct "Hm" as (m) "[%H1 Hm]".
+    iDestruct "Hm" as (m) "[%Hl Hm]".
     iNext. wp_pure _. wp_lam. wp_load.
-    iApply "Hpost". unfold is_lock. done. Unshelve.       
-
-Admitted.
+    iApply "Hpost". done.
+Qed.
