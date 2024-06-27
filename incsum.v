@@ -137,7 +137,7 @@ Definition is_lock (lk : val) (R : iProp Σ) : iProp Σ :=
 (**
   newlock_spec
 *)
-Lemma newlock_spec (R : iProp Σ):
+Lemma newlock_spec R:
   {{{ R }}} newlock #() {{{ lk, RET lk; is_lock lk R }}}.
 Proof.
   iIntros (Φ) "HR HΦ".
@@ -208,7 +208,7 @@ Qed.
 
   (* parallel inc sum *)
 
-Definition parallel_inc_sum_locked (lock : val): val := λ: "n" "v",
+Definition parallel_inc_sum_locked (lock : val) : val := λ: "n" "v",
   let: "sum" := ref #0 in
   ((acquire lock;; inc_list "n" "v";; release lock) |||
   (acquire lock;; "sum" <- (sum_list "v");; release lock));;
@@ -236,7 +236,7 @@ Proof.
   wp_bind ((acquire lock;; inc_list #n v;; release lock) ||| (acquire lock;; #sum <- sum_list v;; release lock))%E.
   wp_smart_apply ((wp_par (fun _ => True)%I (fun _ => (∃ (m : Z), ⌜(sum_list_coq l ≤ m)%Z⌝ ∗ sum ↦ #m))%I) with "[] [Hsum]").
   + wp_apply (acquire_spec with "[Hlock]").
-    - unfold is_lock. iDestruct "Hlock" as (l0) "[%Hl0 Hinv]".
+    - unfold is_lock. iDestruct "Hlock" as (l0 ->) "Hinv".
       iExists l0. iSplit.
       { iPureIntro. done. }
       { done. }
@@ -254,7 +254,7 @@ Proof.
       { done. }
   + wp_apply (acquire_spec with "[Hlock]"). done.
     iIntros "Hv". wp_seq.
-    unfold is_lock. iDestruct "Hlock" as (l0) "(%Hl0 & Hinv)". subst.
+    unfold is_lock. iDestruct "Hlock" as (l0 ->) "Hinv".
     unfold inc_sum_inv. iDestruct "Hv" as (l') "(%Hl & Hv)".
     wp_apply (sum_list_spec with "[Hv]"). done.
     iIntros "Hv". wp_store.
