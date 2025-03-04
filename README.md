@@ -117,5 +117,5 @@ Lemma sum_inc_eq_n_len : forall (l : list Z) n,
 # References
 
 + All definitions and lemmas for "Lists" was taken from `ex_02_sumlist.v` distributed in the course.
-+ All definitions and lemmas for "Spinlock" was taken from `ex_03_spinlock.v` distributed in the course.\
++ All definitions and lemmas for "Spinlock" was taken from `ex_03_spinlock.v` distributed in the course.
 + No external references used. 
